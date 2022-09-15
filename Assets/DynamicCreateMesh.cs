@@ -4,6 +4,8 @@ using UnityEngine;
 [RequireComponent(typeof(MeshFilter))]
 public class DynamicCreateMesh : MonoBehaviour
 {
+    [SerializeField] Material _colorMaterial;
+
     private void Start()
     {
         // メッシュの作成
@@ -18,13 +20,14 @@ public class DynamicCreateMesh : MonoBehaviour
         });
 
         // インデックス配列をメッシュにセット
-        mesh.SetTriangles(new int[]
-        {
-            0, 1, 2
-        }, 0);
+        mesh.SetTriangles(new int[] { 0, 1, 2 }, 0);
 
         // MeshFilterを通してメッシュをMeshRendererにセット
         var filter = GetComponent<MeshFilter>();
         filter.sharedMesh = mesh;
+
+        // MeshRendererにMaterialをセット
+        var meshRenderer = GetComponent<MeshRenderer>();
+        meshRenderer.material = new Material(Shader.Find("Unlit/ColorShader"));
     }
 }
