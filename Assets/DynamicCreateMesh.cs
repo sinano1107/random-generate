@@ -78,8 +78,16 @@ public class DynamicCreateMesh : MonoBehaviour
         var y_min = System.Math.Min(vertex_0.y, vertex_1.y) - range;
 
         var vertex_2 = new Vector3(Random.Range(x_max, x_min), Random.Range(y_max, y_min));
+        var triangleCenter_Z = GetZ(vertex_0, vertex_1, myTriangleCenter);
+        var vertex_2_Z = GetZ(vertex_0, vertex_1, vertex_2);
 
-        // todo vertex_2が折り返る形になっていた時、再試行する
+        // triangleCenter_Zとvertex_2_Zの正負が等しい場合、
+        // 折返った形になっているので再試行する
+        while ((triangleCenter_Z < 0 && vertex_2_Z < 0) || (triangleCenter_Z > 0 && vertex_2_Z > 0))
+        {
+            vertex_2 = new Vector3(Random.Range(x_max, x_min), Random.Range(y_max, y_min));
+            vertex_2_Z = GetZ(vertex_0, vertex_1, vertex_2);
+        }
 
         myVertices.Add(vertex_2);
         myMesh.SetVertices(myVertices);
