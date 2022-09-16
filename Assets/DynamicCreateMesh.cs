@@ -44,14 +44,7 @@ public class DynamicCreateMesh : MonoBehaviour
         };
         myMesh.SetVertices(myVertices);
 
-        // 点0から点1へのベクトル
-        var a = myVertices[1] - myVertices[0];
-
-        // 点0から点2へのベクトル
-        var b = myVertices[2] - myVertices[0];
-
-        // aとbの外積のZ成分
-        var Z = a.x * b.y - b.x * a.y;
+        var Z = GetZ(myVertices[0], myVertices[1], myVertices[2]);
 
         // 点2が左側の時は0,2,1の順、右側の時は0,1,2の順で結ぶ
         myTriangles = (Z > 0) ? new List<int> { 0, 2, 1 } : new List<int> { 0, 1, 2 };
@@ -107,5 +100,22 @@ public class DynamicCreateMesh : MonoBehaviour
         var y = (a * A.y + b * B.y + c * C.y) / (a + b + c);
 
         return new Vector3(x, y);
+    }
+
+    // 外積のZを計算 返り値が正なら左、負なら右
+    // Start: 直線の始点
+    // End: 直線の終点
+    // Target: 調べたい点
+    private float GetZ(Vector3 Start, Vector3 End, Vector3 Target)
+    {
+        // 終点から始点への直線のベクトル
+        var a = End - Start;
+
+        // 始点から目標へのベクトル
+        var b = Target - Start;
+
+        // aとbの外積のZ成分
+        var Z = a.x * b.y - b.x * a.y;
+        return Z;
     }
 }
