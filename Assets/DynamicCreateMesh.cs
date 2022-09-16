@@ -92,7 +92,10 @@ public class DynamicCreateMesh : MonoBehaviour
         myVertices.Add(vertex_2);
         myMesh.SetVertices(myVertices);
 
-        var newTriangles = new List<int> { vertex_0_index, vertex_1_index, 3 };
+        // vertex_2が左側の時は0,2,1の順、右側の時は0,1,2の順で結ぶ
+        var newTriangles = (vertex_2_Z > 0)
+            ? new List<int> { vertex_0_index, 3, vertex_1_index }
+            : new List<int> { vertex_0_index, vertex_1_index, 3 };
         myTriangles.AddRange(newTriangles);
         myMesh.SetTriangles(myTriangles, 0);
     }
