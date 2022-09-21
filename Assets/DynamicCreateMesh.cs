@@ -221,4 +221,38 @@ public class DynamicCreateMesh : MonoBehaviour
 
         return false;
     }
+
+    private void Update()
+    {
+        if (Input.GetMouseButtonDown(0))
+        {
+            var target = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            target.z = 0;
+            GameObject.Find("ClickPoint").transform.position = target;
+
+            if (IsItFoldedBack(target))
+            {
+                Debug.Log("衝突しています");
+            }
+            else
+            {
+                Debug.Log("衝突していません");
+            }
+        }
+    }
+
+    // 点Pと点a,bを結んだ辺が既存の辺と衝突しているか調べる
+    private bool IsItFoldedBack(Vector3 P/*, Vector3 a, Vector3 b*/)
+    {
+        var testPoint_1 = new Vector3(-1, 0);
+        var testPoint_2 = new Vector3(1, 0);
+        var testPoint_3 = new Vector3(0, -1);
+
+        var s = GetZ(testPoint_1, testPoint_2, testPoint_3);
+        var t = GetZ(testPoint_1, testPoint_2, P);
+        var u = GetZ(testPoint_3, P, testPoint_1);
+        var v = GetZ(testPoint_3, P, testPoint_2);
+
+        return (s * t < 0) && (u * v < 0);
+    }
 }
