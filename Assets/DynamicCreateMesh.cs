@@ -5,10 +5,12 @@ using UnityEngine;
 [RequireComponent(typeof(MeshFilter))]
 public class DynamicCreateMesh : MonoBehaviour
 {
+    const float range = 2.0f;
     private Mesh myMesh;
     private List<Vector3> myVertices;
     private List<int> myTriangles;
     private Vector3 myTriangleCenter;
+    private List<(Vector3 X, Vector3 Y)> mySides;
 
     private void Start()
     {
@@ -42,34 +44,34 @@ public class DynamicCreateMesh : MonoBehaviour
             new Vector3(Random.Range(min, max), Random.Range(min, max)),
             new Vector3(Random.Range(min, max), Random.Range(min, max)),
         };
-        myMesh.SetVertices(myVertices);
+        // myMesh.SetVertices(myVertices);
 
         var Z = GetZ(myVertices[0], myVertices[1], myVertices[2]);
 
         // 点2が左側の時は0,2,1の順、右側の時は0,1,2の順で結ぶ
         myTriangles = (Z > 0) ? new List<int> { 0, 2, 1 } : new List<int> { 0, 1, 2 };
-        myMesh.SetTriangles(myTriangles, 0);
+        // myMesh.SetTriangles(myTriangles, 0);
 
         // 三角形の内心を保存
         myTriangleCenter = GetTriangleCenter(myVertices[0], myVertices[1], myVertices[2]);
         GameObject.Find("TriangleCenter").transform.position = myTriangleCenter;
-    }
 
-    // 増殖
-    public void Proliferate()
-    {
-        const float range = 3.0f;
-
-        var vertex_0_index = Random.Range(0, 3);
-        var vertex_1_index = Random.Range(0, 3);
-        // 二点が被らなくなるまでシャッフル
-        while (vertex_0_index == vertex_1_index)
+        // 辺を保存
+        mySides = new List<(Vector3, Vector3)>
         {
-            vertex_1_index = Random.Range(0, 3);
-        }
+            (myVertices[0], myVertices[1]),
+            (myVertices[1], myVertices[2]),
+            (myVertices[2], myVertices[0]),
+        };
 
-        var vertex_0 = myVertices[vertex_0_index];
-        var vertex_1 = myVertices[vertex_1_index];
+        //=====================================================================
+        // ↑ 核となる三角形を生成
+        // ↓ そこから一つ三角形を増殖させて四角形を生成(最初の増殖は変の交差判定が機能しない場合があるため)
+        //=====================================================================
+
+        // 増殖元の辺を選択
+        var choiceSideIndex = Random.Range(0, mySides.Count);
+        var (vertex_0, vertex_1) = mySides[choiceSideIndex];
 
         // vertex_2の範囲を設定
         var x_max = System.Math.Max(vertex_0.x, vertex_1.x) + range;
@@ -77,7 +79,10 @@ public class DynamicCreateMesh : MonoBehaviour
         var y_max = System.Math.Max(vertex_0.y, vertex_1.y) + range;
         var y_min = System.Math.Min(vertex_0.y, vertex_1.y) - range;
 
+        // vertex_2を選択
         var vertex_2 = new Vector3(Random.Range(x_max, x_min), Random.Range(y_max, y_min));
+
+        // 核三角形の内心と、vertex_2のZ成分を算出
         var triangleCenter_Z = GetZ(vertex_0, vertex_1, myTriangleCenter);
         var vertex_2_Z = GetZ(vertex_0, vertex_1, vertex_2);
 
@@ -89,15 +94,59 @@ public class DynamicCreateMesh : MonoBehaviour
             vertex_2_Z = GetZ(vertex_0, vertex_1, vertex_2);
         }
 
+        // 頂点を追加
         myVertices.Add(vertex_2);
         myMesh.SetVertices(myVertices);
 
         // vertex_2が左側の時は0,2,1の順、右側の時は0,1,2の順で結ぶ
         var newTriangles = (vertex_2_Z > 0)
-            ? new List<int> { vertex_0_index, 3, vertex_1_index }
-            : new List<int> { vertex_0_index, vertex_1_index, 3 };
+            ? new List<int> { myVertices.IndexOf(vertex_0), 3, myVertices.IndexOf(vertex_1) }
+            : new List<int> { myVertices.IndexOf(vertex_0), myVertices.IndexOf(vertex_1), 3 };
+        // 三角形を追加
         myTriangles.AddRange(newTriangles);
         myMesh.SetTriangles(myTriangles, 0);
+
+        // 折り目の辺を削除し、新たな二辺を追加する
+        mySides.RemoveAt(choiceSideIndex);
+        mySides.Add((vertex_0, vertex_2));
+        mySides.Add((vertex_1, vertex_2));
+    }
+
+    // 増殖
+    public void Proliferate()
+    {
+        var index = myVertices.Count;
+
+        // 折り目となる辺のインデックス
+        var choiceSideIndex = Random.Range(0, mySides.Count);
+        var (vertex_0, vertex_1) = mySides[choiceSideIndex];
+
+        // vertex_2の範囲を設定
+        var x_max = System.Math.Max(vertex_0.x, vertex_1.x) + range;
+        var x_min = System.Math.Min(vertex_0.x, vertex_1.x) - range;
+        var y_max = System.Math.Max(vertex_0.y, vertex_1.y) + range;
+        var y_min = System.Math.Min(vertex_0.y, vertex_1.y) - range;
+
+        var vertex_2 = new Vector3(Random.Range(x_max, x_min), Random.Range(y_max, y_min));
+        var vertex_2_Z = GetZ(vertex_0, vertex_1, vertex_2);
+
+        // todo ここで追加した点と、既存の三角形全てとの内外判定を行う。
+        // todo ここで追加した辺と、既存の全辺との交差判定を行う。
+
+        myVertices.Add(vertex_2);
+        myMesh.SetVertices(myVertices);
+
+        // vertex_2が左側の時は0,2,1の順、右側の時は0,1,2の順で結ぶ
+        var newTriangles = (vertex_2_Z > 0)
+            ? new List<int> { myVertices.IndexOf(vertex_0), index, myVertices.IndexOf(vertex_1) }
+            : new List<int> { myVertices.IndexOf(vertex_0), myVertices.IndexOf(vertex_1), index };
+        myTriangles.AddRange(newTriangles);
+        myMesh.SetTriangles(myTriangles, 0);
+
+        // 折り目の辺を削除し、新たな二辺を追加する
+        mySides.RemoveAt(choiceSideIndex);
+        mySides.Add((vertex_0, vertex_2));
+        mySides.Add((vertex_1, vertex_2));
     }
 
     // 三角形の内心の座標を求める
