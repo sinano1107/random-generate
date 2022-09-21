@@ -5,7 +5,7 @@ using UnityEngine;
 [RequireComponent(typeof(MeshFilter))]
 public class DynamicCreateMesh : MonoBehaviour
 {
-    const float range = 2.0f;
+    const float range = 1.0f;
     private Mesh myMesh;
     private List<Vector3> myVertices;
     private List<int> myTriangles;
@@ -130,7 +130,11 @@ public class DynamicCreateMesh : MonoBehaviour
         var vertex_2 = new Vector3(Random.Range(x_max, x_min), Random.Range(y_max, y_min));
         var vertex_2_Z = GetZ(vertex_0, vertex_1, vertex_2);
 
-        // todo ここで追加した点と、既存の三角形全てとの内外判定を行う。
+        GameObject.Find("NewVertice").transform.position = vertex_2;
+
+        // 追加したい点と、既存の三角形全てとの内外判定を行う。
+        Debug.Log(IsInPolygon(vertex_2));
+
         // todo ここで追加した辺と、既存の全辺との交差判定を行う。
 
         myVertices.Add(vertex_2);
@@ -177,5 +181,44 @@ public class DynamicCreateMesh : MonoBehaviour
         // aとbの外積のZ成分
         var Z = a.x * b.y - b.x * a.y;
         return Z;
+    }
+
+    // 点Pが多角形内に存在するか調べる
+    private bool IsInPolygon(Vector3 P)
+    {
+        // 点Pが三角形内に存在するか調べる
+        bool IsInTriangle(Vector3 p, Vector3 v1, Vector3 v2, Vector3 v3)
+        {
+            bool b1, b2, b3;
+
+            b1 = GetZ(p, v1, v2) < 0;
+            b2 = GetZ(p, v2, v3) < 0;
+            b3 = GetZ(p, v3, v1) < 0;
+
+            return (b1 == b2) && (b2 == b3);
+        }
+
+        // 構成要素である全三角形との内外判定
+        for (var i = 0; i < myTriangles.Count / 3; i++)
+        {
+            var index = i * 3;
+
+            Vector3 v1, v2, v3;
+            v1 = myVertices[myTriangles[index]];
+            v2 = myVertices[myTriangles[index + 1]];
+            v3 = myVertices[myTriangles[index + 2]];
+
+            if (IsInTriangle(P, v1, v2, v3))
+            {
+                Debug.Log($"{i + 1}個目の三角形に内包されている");
+                return true;
+            }
+            else
+            {
+                Debug.Log($"{i + 1}個目問題ない");
+            }
+        }
+
+        return false;
     }
 }
