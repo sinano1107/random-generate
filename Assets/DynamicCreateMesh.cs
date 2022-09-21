@@ -131,12 +131,26 @@ public class DynamicCreateMesh : MonoBehaviour
         // 頂点を選択
         var vertex_2 = new Vector3(Random.Range(x_max, x_min), Random.Range(y_max, y_min));
 
+        var count = 1;
         // 追加したい点と、既存の三角形全てとの内外判定を行う。
         while (IsInPolygon(vertex_2)
             // 追加した辺と、既存の全辺との交差判定を行う。
             || IsItFoldedBack(vertex_2, vertex_0, vertex_1)) 
         {
+            if (count > 100)
+            {
+                Debug.Log("100回やっても見つからんかった");
+                // 辺の選択からやり直す
+                choiceSideIndex = Random.Range(0, mySides.Count);
+                (vertex_0, vertex_1) = mySides[choiceSideIndex];
+                x_max = System.Math.Max(vertex_0.x, vertex_1.x) + range;
+                x_min = System.Math.Min(vertex_0.x, vertex_1.x) - range;
+                y_max = System.Math.Max(vertex_0.y, vertex_1.y) + range;
+                y_min = System.Math.Min(vertex_0.y, vertex_1.y) - range;
+                count = 0;
+            }
             vertex_2 = new Vector3(Random.Range(x_max, x_min), Random.Range(y_max, y_min));
+            count += 1;
         }
 
         // 視覚化
@@ -228,8 +242,7 @@ public class DynamicCreateMesh : MonoBehaviour
     {
         for (var i = 0; i < mySides.Count; i++)
         {
-            var x = mySides[i].X;
-            var y = mySides[i].Y;
+            var (x, y) = mySides[i];
 
             // a
             var s = GetZ(x, y, P);
