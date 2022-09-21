@@ -115,6 +115,7 @@ public class DynamicCreateMesh : MonoBehaviour
     // 増殖
     public void Proliferate()
     {
+        // 何個目の頂点を作り出すか(0スタート)
         var index = myVertices.Count;
 
         // 折り目となる辺のインデックス
@@ -127,29 +128,28 @@ public class DynamicCreateMesh : MonoBehaviour
         var y_max = System.Math.Max(vertex_0.y, vertex_1.y) + range;
         var y_min = System.Math.Min(vertex_0.y, vertex_1.y) - range;
 
+        // 頂点を選択
         var vertex_2 = new Vector3(Random.Range(x_max, x_min), Random.Range(y_max, y_min));
-        var vertex_2_Z = GetZ(vertex_0, vertex_1, vertex_2);
-
-        GameObject.Find("NewVertice").transform.position = vertex_2;
 
         // 追加したい点と、既存の三角形全てとの内外判定を行う。
-        if (IsInPolygon(vertex_2))
+        while (IsInPolygon(vertex_2)
+            // 追加した辺と、既存の全辺との交差判定を行う。
+            || IsItFoldedBack(vertex_2, vertex_0, vertex_1)) 
         {
-            Debug.Log("内包されている");
+            vertex_2 = new Vector3(Random.Range(x_max, x_min), Random.Range(y_max, y_min));
         }
 
-        // ここで追加した辺と、既存の全辺との交差判定を行う。
+        // 視覚化
+        GameObject.Find("NewVertice").transform.position = vertex_2;
         GameObject.Find("PointA").transform.position = vertex_0;
         GameObject.Find("PointB").transform.position = vertex_1;
-        if (IsItFoldedBack(vertex_2, vertex_0, vertex_1))
-        {
-            Debug.Log("衝突している");
-        }
 
+        // 頂点を保存
         myVertices.Add(vertex_2);
         myMesh.SetVertices(myVertices);
 
         // vertex_2が左側の時は0,2,1の順、右側の時は0,1,2の順で結ぶ
+        var vertex_2_Z = GetZ(vertex_0, vertex_1, vertex_2);
         var newTriangles = (vertex_2_Z > 0)
             ? new List<int> { myVertices.IndexOf(vertex_0), index, myVertices.IndexOf(vertex_1) }
             : new List<int> { myVertices.IndexOf(vertex_0), myVertices.IndexOf(vertex_1), index };
