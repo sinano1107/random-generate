@@ -133,9 +133,18 @@ public class DynamicCreateMesh : MonoBehaviour
         GameObject.Find("NewVertice").transform.position = vertex_2;
 
         // 追加したい点と、既存の三角形全てとの内外判定を行う。
-        Debug.Log(IsInPolygon(vertex_2));
+        if (IsInPolygon(vertex_2))
+        {
+            Debug.Log("内包されている");
+        }
 
-        // todo ここで追加した辺と、既存の全辺との交差判定を行う。
+        // ここで追加した辺と、既存の全辺との交差判定を行う。
+        GameObject.Find("PointA").transform.position = vertex_0;
+        GameObject.Find("PointB").transform.position = vertex_1;
+        if (IsItFoldedBack(vertex_2, vertex_0, vertex_1))
+        {
+            Debug.Log("衝突している");
+        }
 
         myVertices.Add(vertex_2);
         myMesh.SetVertices(myVertices);
@@ -208,51 +217,34 @@ public class DynamicCreateMesh : MonoBehaviour
             v2 = myVertices[myTriangles[index + 1]];
             v3 = myVertices[myTriangles[index + 2]];
 
-            if (IsInTriangle(P, v1, v2, v3))
-            {
-                Debug.Log($"{i + 1}個目の三角形に内包されている");
-                return true;
-            }
-            else
-            {
-                Debug.Log($"{i + 1}個目問題ない");
-            }
+            if (IsInTriangle(P, v1, v2, v3)) return true;
         }
 
         return false;
     }
 
-    private void Update()
-    {
-        if (Input.GetMouseButtonDown(0))
-        {
-            var target = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            target.z = 0;
-            GameObject.Find("ClickPoint").transform.position = target;
-
-            if (IsItFoldedBack(target))
-            {
-                Debug.Log("衝突しています");
-            }
-            else
-            {
-                Debug.Log("衝突していません");
-            }
-        }
-    }
-
     // 点Pと点a,bを結んだ辺が既存の辺と衝突しているか調べる
-    private bool IsItFoldedBack(Vector3 P/*, Vector3 a, Vector3 b*/)
+    private bool IsItFoldedBack(Vector3 P, Vector3 a, Vector3 b)
     {
-        var testPoint_1 = new Vector3(-1, 0);
-        var testPoint_2 = new Vector3(1, 0);
-        var testPoint_3 = new Vector3(0, -1);
+        for (var i = 0; i < mySides.Count; i++)
+        {
+            var x = mySides[i].X;
+            var y = mySides[i].Y;
 
-        var s = GetZ(testPoint_1, testPoint_2, testPoint_3);
-        var t = GetZ(testPoint_1, testPoint_2, P);
-        var u = GetZ(testPoint_3, P, testPoint_1);
-        var v = GetZ(testPoint_3, P, testPoint_2);
+            // a
+            var s = GetZ(x, y, P);
+            var t = GetZ(x, y, a);
+            var u = GetZ(P, a, x);
+            var v = GetZ(P, a, y);
+            if ((s * t < 0) && (u * v < 0)) return true;
 
-        return (s * t < 0) && (u * v < 0);
+            // b
+            t = GetZ(x, y, b);
+            u = GetZ(P, b, x);
+            v = GetZ(P, b, y);
+            if ((s * t < 0) && (u * v < 0)) return true;
+        }
+
+        return false;
     }
 }
