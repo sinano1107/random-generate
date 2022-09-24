@@ -84,7 +84,7 @@ public class DynamicCreateMesh : MonoBehaviour
         var triangleCenter_Z = GetZ(vertex_0, vertex_1, ostracized);
         var vertex_2_Z = GetZ(vertex_0, vertex_1, vertex_2);
 
-        // triangleCenter_Zとvertex_2_Zの正負が等しい場合、
+        // ostracizedとvertex_2_Zの正負が等しい場合、
         // 折返った形になっているので再試行する
         while ((triangleCenter_Z < 0 && vertex_2_Z < 0) || (triangleCenter_Z > 0 && vertex_2_Z > 0))
         {
